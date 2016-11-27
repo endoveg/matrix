@@ -12,14 +12,16 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <pthread.h>
+#define THREAD_NUM 3
 
-void m_printer(matrix *A) {
+void m_printer(matrix *A, FILE *f) {
 	int i, j;
 	for(i = 0; i < A->dim; i++) {
 		for(j=0; j < A->dim; j++) {
-		printf("%d\t", A->M[i][j]);
+		  fprintf(f,"%d ", A->M[i][j]);
 		}
-		printf("\n");
+		fprintf(f,"\n");
 	}
 }
 void mat_product(matrix *A, matrix *B, matrix **AB) {
@@ -28,24 +30,27 @@ void mat_product(matrix *A, matrix *B, matrix **AB) {
 	int n = A->dim;
 	int i, j;
 	int pth;
+	int cur;
+	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 	matrix * C = *AB;
 	C->dim = n;
 	pthread_t thids[n];
-	row_n_col pack[n];
+	row_n_col pack;
 	for (i = 0; i < n; i++) {
-		for (j = 0; j<n; j++) {
-		  pack[j].A = A;
-		  pack[j].B = B;
-		  pack[j].C = C;
-		  pack[j].j = j;
-		  pack[j].i = i;
-		  pth = pthread_create(thids+j, NULL, &start_mul, (void*) (pack+j));
-		  /*pthread_join(thids[j], NULL);*/
+		cur = 0;
+		pack.i = i;
+		pack.A = A;
+		pack.B = B;
+		pack.C = C;
+		pack.mutex = mutex;
+		pack.cur = &cur;
+		for (j=0; j < THREAD_NUM; j++) {
+		  pth = pthread_create(thids+j, NULL, &start_mul, (void*) &pack);
 		  assert(pth==0);
 		}
-		for (j = 0; j<n; j++) {
+		for (j=0; j < THREAD_NUM; j++) {
 		  pthread_join(thids[j], NULL);
-		  }
+		}
 	}
 }
 
@@ -63,9 +68,17 @@ void dot_product(matrix *A, matrix *B, matrix *C, int i, int j) {
 
 void* start_mul(void *p) {
 	row_n_col * P = (row_n_col *) p;
-	assert(P->j < P->A->dim);
 	assert(P->i < P->B->dim);
-	dot_product(P->A,P->B,P->C,P->i,P->j);
+	pthread_mutex_t mutex = P->mutex;
+	int *cur = P->cur;
+	int j;
+	while (*cur < (P->A->dim)) {
+		pthread_mutex_lock(&mutex);
+		j = *cur;
+		*cur = *cur + 1;
+		pthread_mutex_unlock(&mutex);
+		dot_product(P->A,P->B,P->C,P->i,j);
+	}
 	return (void *) NULL;
 }
 
