@@ -3,12 +3,12 @@ import numpy as np
 import re
 from subprocess import call
 
-N = 6
-MAXINT = 50
-MININT = -50
-NUMBER_OF_TESTS = 100
+N = 20
+MAXINT = 25
+MININT = -25
+NUMBER_OF_TESTS = 1000
+f = 0
 for i in range(NUMBER_OF_TESTS):
-	f = 0
 	A = np.random.randint(MININT, MAXINT, size=(N,N))
 	B = np.random.randint(MININT, MAXINT, size=(N,N))
 	C = np.dot(A,B)
@@ -27,6 +27,7 @@ for i in range(NUMBER_OF_TESTS):
 		print(C)
 		print("Result:")
 		print(C_res)
+		print(C-C_res)
 if f > 0:
 	print(str(f) + "test(s) failed\n")
 else:

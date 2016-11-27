@@ -4,7 +4,7 @@
 typedef int elements[MAX_DIM][MAX_DIM];
 struct _matrix {
   int dim;
-  int M[MAX_DIM][MAX_DIM];
+  long int M[MAX_DIM][MAX_DIM];
 };
 typedef struct _matrix matrix;
 
@@ -12,9 +12,8 @@ struct _row_n_col {
 	matrix *A;
 	matrix *B;
 	matrix *C;
-	int i; //row
 	pthread_mutex_t mutex;
-	int *cur; //current column
+	int cur; //current column
 };
 typedef struct _row_n_col row_n_col;
 
