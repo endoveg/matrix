@@ -106,29 +106,20 @@ matrix * read_matrix_from_file(FILE *F, int DIM) {
   return p;
 }
 
-/*long int determinant(long M[MAX_DIM][MAX_DIM], int n) {
-  int i, j, minor_no, j_offset;
-  long int  det = 0;
-  long minor[MAX_DIM][MAX_DIM];  
+long long int determinant(int** M, int n) {
+  int minor_no;
+  long long int  det = 0;
+  int **minor;  
   if (n == 2) {
     det = M[0][0]*M[1][1] - M[1][0]*M[0][1];
-  } else {
+  }else if (n == 1) {
+    det = M[0][0];
+  }else {
     for(minor_no = 0; minor_no < n; minor_no++) {
-      minor = (long int **)malloc(sizeof(int *) * (n-1));
-      for(i = 0; i < n; i++) 
-	minor[i] = (long int *)malloc(sizeof(int) * (n-1));v
-      for(i = 0; i < n-1; i++) {
-	j_offset = 0;
-	for(j = 0; j < n; j++) {
-	  if(j == minor_no)
-	    continue;
-	  else {
-	    minor[i][j] = M[i+1][j_offset];
-	    j_offset += 1;
-	  }
-	}
-      }
-      det += oddp(minor_no + 1 + 1) * M[0][minor_no] * determinant(minor, n-1);
+      minor = make_minor(M, n, minor_no);
+      det += oddp(minor_no) * M[0][minor_no] *
+	determinant(minor, n-1);
+      free_minor(minor, n-1);
     }
   }
   return(det);
@@ -136,34 +127,37 @@ matrix * read_matrix_from_file(FILE *F, int DIM) {
 
 int oddp (int n) {
   if (n % 2)
-    return 1;
+    return -1;
   else
-    return -1; 
+    return 1; 
 }
 
-long int D(matrix * A) {
+long long int D(matrix * A) {
   int j;
   pthread_t thids[THREAD_NUM];
-  long int *det;
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
   arg_det arg;
-  det = (long int *)malloc(sizeof(long int));
-  arg.det = det;
+  long long int det = 0;
+  arg.D = (long long int *)malloc(sizeof(long long int)*A->dim);
   arg.A = A;
   arg.mutex = mutex;
   arg.cur = 0;
-  arg.det = 0;
   for(j=0; j < THREAD_NUM; j++)
     pthread_create(thids+j, NULL, &_det, (void*) &arg);
   for (j=0; j < THREAD_NUM; j++)
     pthread_join(thids[j],NULL);
-  return *arg.det;
+  for (j = 0; j < A->dim; j++)
+    det += arg.D[j];
+  free(arg.D);
+  return det;
 }
 
 void * _det(void * arg) {
-  arg_det *p = (arg_det *) arg;
-  int n = p->A->dim;
-  int q;
+  arg_det *p;
+  int n, q;
+  int **minor;
+  p = (arg_det *) arg;
+  n = p->A->dim;
   while(1) {
     pthread_mutex_lock(&(p->mutex));
     q = p->cur;
@@ -172,10 +166,47 @@ void * _det(void * arg) {
       break;
     }
     p->cur += 1;
-    *(p->det) += determinant(p->A->M,n);
     pthread_mutex_unlock(&(p->mutex));
+    minor = make_minor(p->A->M, n, q);
+    p->D[q] =  oddp(q) * determinant(minor,n-1) * p->A->M[0][q];
+    free_minor(minor, n-1);
   }
   return (void *) NULL;
 }
 
-*/
+int **make_minor(int **M, int n, int minor_no) {
+  int i, j, j_offset;
+  int ** minor;
+  minor = (int **)malloc((n-1)*sizeof(int *));
+  for(i = 0; i < n-1; i++) 
+    minor[i] = (int *)malloc((n-1)*sizeof(int));
+  for(i = 0; i < n-1; i++) {
+    j_offset = 0;
+    for(j = 0; j < n; j++) {
+      if(j == minor_no)
+	continue;
+      else {
+	minor[i][j_offset] = M[i+1][j];
+	j_offset += 1;
+      }
+    }
+  }
+  return minor;
+}
+
+void free_minor(int **minor, int dim) {
+  int i;
+  for (i=0; i < dim; i++) 
+    free(minor[i]);
+  free(minor);
+}
+
+void matrix_cleaner(matrix *A) {
+  int n = A->dim;
+  int i;
+  for (i=0; i<n; i++)
+    free(A->M[i]);
+  free(A->M);
+  free(A);
+}
+

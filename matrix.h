@@ -19,7 +19,7 @@ typedef struct _row_n_col row_n_col;
 
 struct _arg_det {
   matrix *A;
-  long int *det;
+  long long int *D;
   pthread_mutex_t mutex;
   int cur;
 };
@@ -31,7 +31,11 @@ void mat_product(matrix *A, matrix *B, matrix **AB);
 void* start_mul(void * p);
 void m_printer(matrix *A, FILE *f);
 matrix * read_matrix_from_file(FILE *F, int DIM);
-long int determinant(long A[MAX_DIM][MAX_DIM], int n);
-long int D(matrix *A);
+long long int determinant(int **m, int n);
+long long int D(matrix *A);
 void * _det(void *);
 int oddp (int n);
+int **make_minor(int **M, int minor_no, int n);
+void free_minor(int **M, int dim);
+matrix * init(int dim);
+void matrix_cleaner(matrix *A);
