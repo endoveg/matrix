@@ -3,7 +3,7 @@ import numpy as np
 import re
 from subprocess import call
 
-N = 20
+N = 30
 MAXINT = 25
 MININT = -25
 NUMBER_OF_TESTS = 1000

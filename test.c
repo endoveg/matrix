@@ -7,10 +7,8 @@ int main() {
   FILE *FBM = fopen("B","r");
   FILE *FCM = fopen("C","w");
   matrix *A, *B;
-  A = read_matrix_from_file(FAM,20);
-  B = read_matrix_from_file(FBM,20);
-  //m_printer(A);
-  //m_printer(B);
+  A = read_matrix_from_file(FAM,30);
+  B = read_matrix_from_file(FBM,30);
   matrix *C;
   mat_product(A, B, &C);
   m_printer(C, FCM); 
