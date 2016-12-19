@@ -12,12 +12,23 @@
 #include <sys/msg.h>
 #include <fcntl.h>
 
-int main() {
-  char *INPUT_FILE = "A";
-  FILE *FIN = fopen(INPUT_FILE, "r");
-  int dim = 3;
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    printf("usage: ./client <file with matrix A> <DIM>\n");
+    return(-1);
+  }
+  FILE *FIN;
+  if ((FIN = fopen(argv[1], "r")) == NULL) {
+     printf("%s\n", strerror(errno));
+     return(-1);
+  };
+  int dim = strtol(argv[2], NULL, 10);
+  if (errno == ERANGE) {
+    printf("%s\n", strerror(errno));
+    return(-1);
+  }
   key_t key;
-  int msgqid, i, j, proj_id, fd, fifo;
+  int msgqid, i, j, proj_id, fd;
   char *ipc_file_name = "sema.txt";
   proj_id = 42;
   fd = open(ipc_file_name, O_CREAT | O_RDWR, 0666);
@@ -41,9 +52,6 @@ int main() {
     printf("%s\n", strerror(errno));
   }
   
-  /*  if ((fifo = mkfifo("PHI", 0666)) == -1 && errno != EEXIST) {
-    printf("%s\n", strerror(errno));
-    }*/
   int fin;
   fin = open("PHI", O_WRONLY);
   char  c = '1';

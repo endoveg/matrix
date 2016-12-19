@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
   matrix *C = (matrix *)malloc(sizeof(matrix));
   A = read_matrix_from_file(FAM,10);
   C->M = make_minor(A->M, 10, atoi(argv[1]));
-  C->dim = 2;
+  C->dim = 9;
   m_printer(C, FCM);
   fclose(FCM);
   fclose(FAM);

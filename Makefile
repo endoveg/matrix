@@ -5,9 +5,9 @@ matrix.o:
 test: matrix.o
 	gcc -ggdb -Wall -pthread -o test matrix.o test.c 
 test2: matrix.o
-	gcc -O0 -ggdb -Wall -pthread -o test2 matrix.o test2.c
+	gcc -ggdb -Wall -pthread -o test2 matrix.o test2.c
 test3: matrix.o
-	gcc -O0 -ggdb -Wall -pthread -o test3 matrix.o test3.c
+	gcc -ggdb -Wall -pthread -o test3 matrix.o test3.c
 server.o:
 	gcc -pthread -ggdb -Wall  -c server.c
 server: matrix.o server.o

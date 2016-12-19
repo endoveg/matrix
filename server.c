@@ -10,21 +10,24 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/msg.h>
+#include <signal.h>
 #include <fcntl.h>
-#define DIM 3
+#define DIM 4
 
 matrix *server_matrix;
 int msgqid;
 key_t key;
 int server_init();
 void serve(struct client_msgbuf * request);
+void cleanup(int);
 
 int main() {
   FILE *FIN;
   if ((FIN = fopen("server_matrix", "r")) == NULL) {
     printf("Where is server's matrix?\n");
-    return(0);
+    return(-1);
   }
+  signal(SIGINT, cleanup);
   msgqid = server_init();
   server_matrix = read_matrix_from_file(FIN, DIM);
   struct client_msgbuf *buf;
@@ -33,8 +36,7 @@ int main() {
   while(msgrcv(msgqid, (void *) buf, msgsz,1,0) != -1) {
     serve(buf);
   }
-  printf("%s\n", strerror(errno));
-  return(0);
+  return(-1);
 }
 
 int server_init() {
@@ -59,7 +61,6 @@ void serve(struct client_msgbuf * request) {
   int fifo;
   size_t msgsz = sizeof(struct server_msgbuf) - sizeof(long);
   if ((fifo = mkfifo("PHI", 0666)) == -1 && errno != EEXIST) {
-    printf("kek1\n");
     printf("%s\n", strerror(errno));
   }
   int *DATA;
@@ -69,14 +70,12 @@ void serve(struct client_msgbuf * request) {
   }
   DATA = ( int *)shmat(shmid_data, NULL, 0);
   if (DATA == (void *) -1) {
-    printf("kek2\n");
     printf("%s\n", strerror(errno));
   }
   struct server_msgbuf load;
   load.mtype = request->pid;
   load.shmid = shmid_data;
   if (msgsnd(msgqid,(void*) &load, msgsz, 0666) == -1) {
-    printf("kek3\n");
     printf("%s\n", strerror(errno));
   }
   int fin;
@@ -95,7 +94,16 @@ void serve(struct client_msgbuf * request) {
   ans.mtype = request->pid;
   ans.det = D(C);
   if (msgsnd(msgqid,(void*) &ans, msgsz, 0666) == -1) {
-    printf("kek4\n");
      printf("%s\n", strerror(errno));
   }
+  matrix_cleaner(C);
+  matrix_cleaner(client_matrix);
+  shmdt(DATA);
+  shmctl(shmid_data, IPC_RMID, NULL);
+  close(fin);
+}
+
+void cleanup(int sig){
+  msgctl(msgqid, IPC_RMID, NULL);
+  exit(1);
 }
